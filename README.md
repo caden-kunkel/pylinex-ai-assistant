@@ -25,16 +25,16 @@ conda activate pylinex_env
 Clone and install each library:
 
 ```bash
-git clone https://github.com/CU-NESS/distpy.git
+git clone https://github.com/caden-kunkel/distpy.git
 cd distpy && pip install -e . && cd ..
 
-git clone https://github.com/CU-NESS/pylinex.git
+git clone https://github.com/caden-kunkel/pylinex.git
 cd pylinex && pip install -e . && cd ..
 
-git clone https://github.com/CU-NESS/perses.git
+git clone https://github.com/caden-kunkel/perses.git
 cd perses && pip install -e . && cd ..
 
-git clone https://github.com/mirochaj/ares.git
+git clone https://github.com/caden-kunkel/ares.git
 cd ares && pip install -e . && cd ..
 ```
 
@@ -51,13 +51,14 @@ cp -R ares/ares $DST/
 ### 2. Install this Claude Code plugin
 
 ```bash
-claude plugin install CU-NESS/pylinex-claude-plugin
+claude plugin marketplace add caden-kunkel/pylinex-claude-plugin
+claude plugin install pylinex
 ```
 
 Or clone and install locally:
 
 ```bash
-git clone https://github.com/CU-NESS/pylinex-claude-plugin.git
+git clone https://github.com/caden-kunkel/pylinex-claude-plugin.git
 claude plugin install ./pylinex-claude-plugin
 ```
 
