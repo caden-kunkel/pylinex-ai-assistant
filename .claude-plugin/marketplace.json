@@ -1,0 +1,12 @@
+{
+  "plugins": [
+    {
+      "name": "pylinex",
+      "description": "Global 21cm signal extraction toolkit — gives Claude deep knowledge of pylinex, distpy, ares, and perses so it can help you write analysis code.",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/caden-kunkel/pylinex-claude-plugin.git"
+      }
+    }
+  ]
+}
