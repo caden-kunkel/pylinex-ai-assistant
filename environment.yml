@@ -1,0 +1,21 @@
+name: pylinex_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.13
+  - pip
+  - numpy
+  - scipy
+  - matplotlib
+  - healpy
+  - h5py
+  - sympy
+  - pandas
+  - scikit-learn
+  - numdifftools
+  - pip:
+    - git+https://github.com/caden-kunkel/distpy.git#egg=distpy
+    - git+https://github.com/caden-kunkel/ares.git#egg=ares
+    - git+https://github.com/caden-kunkel/perses.git#egg=perses
+    - git+https://github.com/caden-kunkel/pylinex.git#egg=pylinex
