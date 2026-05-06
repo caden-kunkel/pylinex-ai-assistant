@@ -13,7 +13,17 @@ When you install this plugin, Claude automatically understands:
 
 ## Installation
 
-### 1. Install the Python libraries
+### 1. Install Claude Code
+
+Download and install from [claude.ai/code](https://claude.ai/code), then authenticate:
+
+```bash
+claude
+```
+
+Sign in via the browser prompt, then exit with `/exit`.
+
+### 2. Install the Python libraries
 
 Use the included `environment.yml` to create a conda environment with all dependencies and libraries in one command:
 
@@ -22,7 +32,7 @@ conda env create -f https://raw.githubusercontent.com/caden-kunkel/pylinex-claud
 conda activate pylinex_env
 ```
 
-### 2. Install this Claude Code plugin
+### 3. Install this Claude Code plugin
 
 ```bash
 claude plugin marketplace add caden-kunkel/pylinex-claude-plugin
@@ -49,7 +59,5 @@ Claude will generate correct, runnable pylinex code based on its understanding o
 
 ## Requirements
 
-- Claude Code (CLI tool)
-- Python 3.8+
-- numpy, scipy, matplotlib, h5py
-- Optional: emcee (for ensemble sampling), healpy (for beam simulations)
+- A Claude account (Pro, Max, or Team plan)
+- [Conda](https://docs.conda.io/en/latest/miniconda.html) for managing the Python environment
