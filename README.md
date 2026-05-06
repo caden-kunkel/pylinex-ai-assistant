@@ -15,37 +15,11 @@ When you install this plugin, Claude automatically understands:
 
 ### 1. Install the Python libraries
 
-We recommend using a conda environment:
+Use the included `environment.yml` to create a conda environment with all dependencies and libraries in one command:
 
 ```bash
-conda create -n pylinex_env -c conda-forge -y python=3.13 pip numpy scipy matplotlib healpy h5py sympy pandas scikit-learn numdifftools
+conda env create -f https://raw.githubusercontent.com/caden-kunkel/pylinex-claude-plugin/main/environment.yml
 conda activate pylinex_env
-```
-
-Clone and install each library:
-
-```bash
-git clone https://github.com/caden-kunkel/distpy.git
-cd distpy && pip install -e . && cd ..
-
-git clone https://github.com/caden-kunkel/pylinex.git
-cd pylinex && pip install -e . && cd ..
-
-git clone https://github.com/caden-kunkel/perses.git
-cd perses && pip install -e . && cd ..
-
-git clone https://github.com/caden-kunkel/ares.git
-cd ares && pip install -e . && cd ..
-```
-
-**Note:** If `pip install -e .` does not place packages in the correct site-packages location, you can manually copy them:
-
-```bash
-DST=$(python -c "import site; print(site.getsitepackages()[0])")
-cp -R distpy/distpy $DST/
-cp -R pylinex/pylinex $DST/
-cp -R perses/perses $DST/
-cp -R ares/ares $DST/
 ```
 
 ### 2. Install this Claude Code plugin
