@@ -21,16 +21,16 @@ conda create -n pylinex_env -c conda-forge -y python=3.13 pip numpy scipy matplo
 conda activate pylinex_env
 
 # Clone and install each library
-git clone https://github.com/CU-NESS/distpy.git
+git clone https://github.com/caden-kunkel/distpy.git
 cd distpy && pip install -e . && cd ..
 
-git clone https://github.com/CU-NESS/pylinex.git
+git clone https://github.com/caden-kunkel/pylinex.git
 cd pylinex && pip install -e . && cd ..
 
-git clone https://github.com/CU-NESS/perses.git
+git clone https://github.com/caden-kunkel/perses.git
 cd perses && pip install -e . && cd ..
 
-git clone https://github.com/mirochaj/ares.git
+git clone https://github.com/caden-kunkel/ares.git
 cd ares && pip install -e . && cd ..
 ```
 
