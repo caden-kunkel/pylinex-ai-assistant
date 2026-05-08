@@ -1,7 +1,12 @@
 {
   "name": "pylinex",
   "version": "0.1.0",
-  "description": "Global 21cm signal extraction toolkit — gives Claude deep knowledge of pylinex, distpy, ares, and perses so it can help you write analysis code.",
-  "author": "Global 21cm Signal Extraction Team",
-  "skills": ["skills/pylinex"]
+  "description": "Global 21cm signal extraction toolkit \u2014 gives Claude deep knowledge of pylinex, distpy, ares, and perses so it can help you write analysis code.",
+  "author": {
+    "name": "Global 21cm Signal Extraction Team",
+    "email": "caden.kunkel@gmail.com"
+  },
+  "skills": [
+    "skills/pylinex"
+  ]
 }
