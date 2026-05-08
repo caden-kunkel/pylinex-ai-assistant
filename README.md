@@ -32,14 +32,18 @@ conda env create -f https://raw.githubusercontent.com/caden-kunkel/pylinex-claud
 conda activate pylinex_env
 ```
 
+> **Note:** After installing perses, you may see a message reminding you to set the `$PERSES` environment variable. Add `export PERSES=/path/to/your/perses` to your `.bashrc` or `.zshrc`.
+
 ### 3. Install this Claude Code plugin
 
-```bash
-claude plugin marketplace add caden-kunkel/pylinex-claude-plugin
-claude plugin install pylinex
+Inside Claude Code, run these slash commands:
+
+```
+/plugin marketplace add caden-kunkel/pylinex-claude-plugin
+/plugin install pylinex@caden-kunkel-pylinex-claude-plugin
 ```
 
-Or clone and install locally:
+Or install locally by cloning and running in your terminal:
 
 ```bash
 git clone https://github.com/caden-kunkel/pylinex-claude-plugin.git
@@ -61,3 +65,4 @@ Claude will generate correct, runnable pylinex code based on its understanding o
 
 - A Claude account (Pro, Max, or Team plan)
 - [Conda](https://docs.conda.io/en/latest/miniconda.html) for managing the Python environment
+- Optional: `pip install emcee` — required for MCMC ensemble sampling workflows
