@@ -13,7 +13,7 @@
       "author": {
         "name": "Global 21cm Signal Extraction Team"
       },
-      "source": ".",
+      "source": "./plugins/pylinex",
       "category": "science",
       "homepage": "https://github.com/caden-kunkel/pylinex-claude-plugin"
     }
