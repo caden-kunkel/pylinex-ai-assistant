@@ -36,29 +36,15 @@ conda activate pylinex_env
 
 ### 3. Install this Claude Code plugin
 
-Inside Claude Code, run these slash commands:
-
-```
-/plugin marketplace add caden-kunkel/pylinex-claude-plugin
-/plugin install pylinex@caden-kunkel-pylinex-claude-plugin
-```
-
-Or if you prefer a local install, clone the repo first:
+In your terminal, run:
 
 ```bash
-git clone https://github.com/caden-kunkel/pylinex-claude-plugin.git
-```
-
-Then inside Claude Code, run:
-
-```
-/plugin marketplace add ./pylinex-claude-plugin
-/plugin install pylinex@pylinex-claude-plugin
+claude plugin install pylinex
 ```
 
 ## Usage
 
-Once installed, just ask Claude to help with 21cm signal extraction tasks:
+Once installed, start a new Claude Code session and ask Claude to help with 21cm signal extraction tasks:
 
 - "Set up a foreground + signal extraction using a power law times log polynomial for the foreground and a trained basis from my signal training set"
 - "Create an MCMC sampler to explore the posterior of my model parameters"
