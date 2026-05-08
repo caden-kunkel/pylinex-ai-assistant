@@ -1,12 +1,21 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "pylinex-claude-plugin",
+  "description": "Global 21cm signal extraction toolkit \u2014 gives Claude deep knowledge of pylinex, distpy, ares, and perses",
+  "owner": {
+    "name": "Global 21cm Signal Extraction Team",
+    "email": "caden.kunkel@gmail.com"
+  },
   "plugins": [
     {
       "name": "pylinex",
-      "description": "Global 21cm signal extraction toolkit — gives Claude deep knowledge of pylinex, distpy, ares, and perses so it can help you write analysis code.",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/caden-kunkel/pylinex-claude-plugin.git"
-      }
+      "description": "Global 21cm signal extraction toolkit \u2014 gives Claude deep knowledge of pylinex, distpy, ares, and perses so it can help you write analysis code.",
+      "author": {
+        "name": "Global 21cm Signal Extraction Team"
+      },
+      "source": ".",
+      "category": "science",
+      "homepage": "https://github.com/caden-kunkel/pylinex-claude-plugin"
     }
   ]
 }
