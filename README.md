@@ -43,11 +43,17 @@ Inside Claude Code, run these slash commands:
 /plugin install pylinex@caden-kunkel-pylinex-claude-plugin
 ```
 
-Or install locally by cloning and running in your terminal:
+Or if you prefer a local install, clone the repo first:
 
 ```bash
 git clone https://github.com/caden-kunkel/pylinex-claude-plugin.git
-claude plugin install ./pylinex-claude-plugin
+```
+
+Then inside Claude Code, run:
+
+```
+/plugin marketplace add ./pylinex-claude-plugin
+/plugin install pylinex@pylinex-claude-plugin
 ```
 
 ## Usage
