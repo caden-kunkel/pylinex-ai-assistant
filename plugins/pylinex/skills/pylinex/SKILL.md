@@ -1,3 +1,8 @@
+---
+name: pylinex
+description: Use this skill when helping users write code with pylinex, distpy, ares, or perses for global 21cm cosmological signal extraction. Triggers on tasks involving basis fitting, Fitter, MetaFitter, BasisSum, Expanders, TrainedBasis, Extractor, MAAFitter, MCMC sampling, foreground modeling, signal extraction, or any pylinex/distpy/ares/perses API usage.
+version: 0.1.0
+---
 # Pylinex — Global 21cm Signal Extraction Toolkit
 
 You are helping a user write Python code using the **pylinex** library ecosystem for global 21cm cosmological signal extraction. This skill gives you complete knowledge of the library API so you can generate correct, idiomatic code.
