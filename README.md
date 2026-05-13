@@ -25,18 +25,29 @@ Sign in via the browser prompt, then exit with `/exit`.
 
 ### 2. Install the Python libraries
 
-Use the included `environment.yml` to create a conda environment with all dependencies and libraries in one command:
+**Recommended: create a dedicated conda environment**
+
+This installs all dependencies and all four libraries in one command:
 
 ```bash
 conda env create -f https://raw.githubusercontent.com/caden-kunkel/pylinex-claude-plugin/main/environment.yml
 conda activate pylinex_env
 ```
 
+**Or: install into an existing environment**
+
+If you already have a Python environment with numpy, scipy, matplotlib, h5py, healpy, sympy, pandas, scikit-learn, and numdifftools, you can install the libraries directly:
+
+```bash
+pip install git+https://github.com/caden-kunkel/distpy.git
+pip install git+https://github.com/caden-kunkel/ares.git
+pip install git+https://github.com/caden-kunkel/perses.git
+pip install git+https://github.com/caden-kunkel/pylinex.git
+```
+
 > **Note:** After installing perses, you may see a message reminding you to set the `$PERSES` environment variable. Add `export PERSES=/path/to/your/perses` to your `.bashrc` or `.zshrc`.
 
 ### 3. Install this Claude Code plugin
-
-In your terminal, run:
 
 ```bash
 claude plugin install pylinex
@@ -56,5 +67,5 @@ Claude will generate correct, runnable pylinex code based on its understanding o
 ## Requirements
 
 - A Claude account (Pro, Max, or Team plan)
-- [Conda](https://docs.conda.io/en/latest/miniconda.html) for managing the Python environment
+- [Conda](https://docs.conda.io/en/latest/miniconda.html) for managing the Python environment (recommended) or an existing Python 3.8+ environment
 - Optional: `pip install emcee` — required for MCMC ensemble sampling workflows
