@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "pylinex-assistant",
+  "name": "pylinex-AI-Assistant",
   "description": "Global 21cm signal extraction toolkit \u2014 gives Claude deep knowledge of pylinex, distpy, ares, and perses",
   "owner": {
     "name": "Global 21cm Signal Extraction Team",
@@ -15,7 +15,7 @@
       },
       "source": "./plugins/pylinex",
       "category": "science",
-      "homepage": "https://github.com/caden-kunkel/pylinex-assistant"
+      "homepage": "https://github.com/caden-kunkel/pylinex-AI-Assistant"
     }
   ]
 }

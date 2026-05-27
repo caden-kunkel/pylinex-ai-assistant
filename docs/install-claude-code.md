@@ -14,19 +14,19 @@ This installs pylinex, distpy, perses, ares, and all dependencies in one step.
 Clone this repo (if you haven't already):
 
 ```bash
-git clone https://github.com/caden-kunkel/pylinex-assistant.git
+git clone https://github.com/caden-kunkel/pylinex-AI-Assistant.git
 ```
 
 Then install the plugin from the local clone:
 
 ```bash
-claude plugin install /path/to/pylinex-assistant
+claude plugin install /path/to/pylinex-AI-Assistant
 ```
 
 Or install directly from GitHub via the plugin marketplace inside Claude Code:
 
 ```
-/plugin marketplace add caden-kunkel/pylinex-assistant
+/plugin marketplace add caden-kunkel/pylinex-AI-Assistant
 ```
 
 ## Step 3 — Activate in a session
