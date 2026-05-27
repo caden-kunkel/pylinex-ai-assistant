@@ -12,7 +12,7 @@ The core asset is a 944-line API reference covering the full pylinex ecosystem: 
 |------|-------------|
 | Claude Code | [docs/install-claude-code.md](docs/install-claude-code.md) |
 | GitHub Copilot | [docs/install-copilot.md](docs/install-copilot.md) |
-| ChatGPT | [docs/install-chatgpt.md](docs/install-chatgpt.md) |
+| ChatGPT | [Custom GPT](https://chatgpt.com/g/g-6a17420264308191896c4dfcd8193fc7-pylinex-ai-assistant) · [install guide](docs/install-chatgpt.md) |
 | Gemini / any other chat AI | [docs/install-other.md](docs/install-other.md) |
 
 Every guide includes both the Python library install and the AI-specific setup — start to finish.

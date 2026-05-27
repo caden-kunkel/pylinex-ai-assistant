@@ -15,6 +15,6 @@ conda activate pylinex_env
 
 ## 2. Load the API reference into ChatGPT
 
-**Option A — Custom GPT (recommended):** [pylinex-ai-assistant](URL_COMING_SOON) — the full API reference is pre-loaded as a knowledge file. Just open the link and start chatting, no setup required.
+**Option A — Custom GPT (recommended):** [pylinex-ai-assistant](https://chatgpt.com/g/g-6a17420264308191896c4dfcd8193fc7-pylinex-ai-assistant) — the full API reference is pre-loaded as a knowledge file. Just open the link and start chatting, no setup required.
 
 **Option B — Paste prompt:** Download [`starter_prompt.md`](../starter_prompt.md) from this repo and paste it as your first message in any ChatGPT chat. ChatGPT will use the API reference for the rest of that session. Works with any model (GPT-4o, o1, etc.) and requires no account setup beyond a free ChatGPT login.
