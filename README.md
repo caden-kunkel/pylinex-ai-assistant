@@ -45,7 +45,7 @@ Once set up, describe what you want in plain English:
 ## Repository structure
 
 ```
-pylinex-claude-plugin/
+pylinex-assistant/
 ├── skills/pylinex/SKILL.md         — 944-line API reference (source of truth)
 ├── .github/copilot-instructions.md — same API reference, for GitHub Copilot
 ├── starter_prompt.md               — preamble + API reference, paste into any chat
