@@ -14,7 +14,7 @@ This installs pylinex, distpy, perses, ares, and all dependencies in one step.
 Copy the Copilot instructions file into your working repository:
 
 ```bash
-cp /path/to/pylinex-AI-Assistant/.github/copilot-instructions.md  \
+cp /path/to/pylinex-ai-assistant/.github/copilot-instructions.md  \
    /path/to/your-project/.github/copilot-instructions.md
 ```
 
