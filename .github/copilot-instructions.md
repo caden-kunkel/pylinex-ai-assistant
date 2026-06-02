@@ -59,6 +59,28 @@ The typical pylinex analysis follows this pipeline:
 
 ---
 
+## Shape Contracts and Common Pitfalls
+
+Treat these as prerequisites before writing any pylinex code.
+
+- **Multi-spectrum data must be flattened.** `temperatures`, `noise_level`, and training sets must be 1D/2D before passing to pylinex classes. Use `.flatten()` on 2D arrays: `noise_level_flat = noise_level.flatten()`.
+
+- **`TrainedBasis` error must be 1D `(nchannels,)`.** If `noise_level` is 2D `(nspectra, nchannels)`, pass `noise_level[0]` or `noise_level.mean(axis=0)`. Passing the full 2D array raises `ValueError: error did not have the same shape as an expanded training set curve.`
+
+- **`Extractor` training sets must be 2D `(ncurves, nchannels_flat)`.** If a training set is 3D `(ncurves, nspectra, nchannels)`, reshape first: `training_set.reshape(training_set.shape[0], -1)`.
+
+- **`dimensions` dicts: arrays within one dict must be the same length.** To search different ranges per component, use one dict per component: `[{'foreground': np.arange(1,11)}, {'signal': np.arange(1,6)}]`. A single dict with different-length arrays raises `ValueError: Not all arrays in a given dimension dictionary were the same length.`
+
+- **`SumModel` prefixes parameter names.** `SumModel(['signal', 'foreground'], [...])` produces parameters like `['signal_amplitude', 'signal_center', ..., 'foreground_a0', ...]`. Always check `model.parameters` before setting up priors.
+
+- **HDF5 key names vary across tutorial files.** Problems 1–5 use `brightness_temperature_noise_level` and `brightness_temperatures`. Problem 6 uses `noise_level` and `temperatures`. Always inspect keys before assuming.
+
+- **`NLFitter.chain` shape is `(nwalkers, nsteps, ndim)` — not flat.** To get a flat sample array: `flat_chain = chain.reshape(-1, chain.shape[-1])`.
+
+- **`NLFitter.acceptance_fraction` shape is `(nwalkers, ncheckpoints)`.** Take `.mean()` for a scalar summary.
+
+---
+
 ## Module Reference
 
 ### pylinex.basis
@@ -207,8 +229,17 @@ SlicedModel(model, output_slice)      # Take subset of output channels
 - `EmulatedModel` — neural network emulator of expensive model
 - `InputInterpolatedModel` / `OutputInterpolatedModel` — interpolation-based models
 
+#### TrainingSetCreator
+Generates training sets by sampling a Model over a DistributionSet of parameter priors.
+
+```python
+creator = TrainingSetCreator(file_name, num_curves, model, prior_distribution_set)
+creator.generate()                         # returns None — writes curves to HDF5 one at a time
+training_set = creator.get_training_set()  # reads file, returns (ncurves, nchannels) array (drops NaN rows)
+# Also: creator.get_training_set(return_parameters=True) → (training_set, parameters)
+```
+
 #### Model Utilities
-- `TrainingSetCreator` — generates training sets from Model objects
 - `ModelTree` — hierarchical model visualization
 - `load_model_from_hdf5_group(group)` — load saved model
 
@@ -265,16 +296,27 @@ Fitter(basis_sum, data, error=None, **priors)
 
 Performs weighted least-squares with optional Gaussian priors. Solution is analytic (no iteration).
 
-Key properties:
-- `fit_parameters` — best-fit coefficient vector
-- `fit_error_covariance` — posterior parameter covariance
-- `fit_residuals` — data minus best-fit model
-- `channel_RMS` — RMS of residuals
-- `channel_bias` — mean of residuals
-- `log_posterior_likelihood` — log evidence
-- `posterior_distribution` — distpy GaussianDistribution
+Key properties (verified from source):
+- `parameter_mean` — best-fit coefficient vector
+- `parameter_covariance` — posterior parameter covariance matrix
+- `parameter_distribution` — distpy GaussianDistribution
+- `parameter_inverse_covariance`
+- `likelihood_parameter_mean` / `likelihood_parameter_covariance` — likelihood-only (no prior) estimates
+- `channel_mean` — best-fit model curve
+- `channel_bias` — data minus best-fit model (residuals)
+- `channel_bias_RMS` — scalar RMS of residuals
+- `channel_RMS` — per-channel RMS
+- `channel_error` — propagated parameter uncertainty to channel space
+- `chi_squared` / `reduced_chi_squared` / `degrees_of_freedom`
+- `bias_statistic` / `weighted_bias`
+- `maximum_loglikelihood`
 - `data_significance` — chi-squared of data term
 - `prior_significance` — chi-squared of prior term
+- `log_parameter_covariance_determinant`
+
+Subbasis methods (take `name=` string for one component):
+- `subbasis_channel_mean(name)`, `subbasis_channel_error(name)`, `subbasis_channel_bias(name)`
+- `subbasis_channel_RMS(name)`, `subbasis_parameter_mean(name)`, `subbasis_parameter_covariance(name)`
 
 When `data` is 2D (multiple curves), all properties become arrays over curves.
 
@@ -309,8 +351,13 @@ Extractor(data, error, names, training_sets, dimensions,
 
 End-to-end linear extraction: creates TrainedBasis for each component, builds BasisSum, runs MetaFitter grid search, selects optimal truncations.
 
+`Extractor` is **lazy** — there is no `.run()` method. Access `.fitter` to trigger the full grid search:
+
+Key properties:
+- `fitter` — triggers computation on first access, returns the optimal `Fitter` object
+- `meta_fitter` — returns the full `MetaFitter` if needed
+
 Key methods:
-- `run()` — execute full extraction pipeline
 - `save(file_name)` / `load(file_name)` — HDF5 persistence
 
 #### Other
@@ -371,8 +418,15 @@ Sampler(file_name, num_walkers, loglikelihood,
 - `use_ensemble_sampler`: if True, uses emcee's EnsembleSampler
 
 Key methods:
-- `run(num_steps)` — run MCMC for given number of steps
+- `run_checkpoints(num_checkpoints)` — run MCMC; each checkpoint = `steps_per_checkpoint` steps. So 2000 total steps with `steps_per_checkpoint=50` → `run_checkpoints(40)`. There is no `.run()` method.
 - `close()` — close HDF5 file handle
+
+**Important:** If the `file_name` HDF5 already exists and `restart_mode=None`, Sampler raises an error. Delete the file first for a clean run:
+```python
+import os
+if os.path.exists(chains_file):
+    os.remove(chains_file)
+```
 
 #### NLFitter
 ```python
@@ -384,13 +438,28 @@ NLFitter(file_name, burn_rule=None, chunk_slice=slice(None))
 
 Loads and analyzes MCMC chains. Supports context manager (`with NLFitter(...) as f:`).
 
-Key properties:
-- `chain` — (nsamples, nparams) array of post-burn-in samples
-- `loglikelihood_values` — ln L at each sample
-- `acceptance_fraction` — overall acceptance rate
-- `mean` — posterior mean vector
-- `covariance` — posterior covariance matrix
-- `posterior_distribution` — fitted GaussianDistribution
+Key properties (verified shapes):
+- `chain` — `(nwalkers, nsteps, ndim)` — **not flat**
+- `lnprobability` — `(nwalkers, nsteps)` log-posterior at each step
+- `lnlikelihood` — `(nwalkers, nsteps)` log-likelihood component
+- `lnprior` — `(nwalkers, nsteps)` log-prior component
+- `acceptance_fraction` — `(nwalkers, ncheckpoints)` — take `.mean()` for scalar
+- `parameters` — list of parameter name strings
+- `maximum_probability_parameters` — MAP parameter vector
+
+To compute posterior statistics manually:
+```python
+with NLFitter(file, burn_rule) as f:
+    chain_3d  = f.chain                          # (nwalkers, nsteps, ndim)
+    lnprob_2d = f.lnprobability                  # (nwalkers, nsteps)
+    params    = f.parameters
+
+flat_chain  = chain_3d.reshape(-1, chain_3d.shape[-1])
+flat_lnprob = lnprob_2d.flatten()
+acceptance  = f.acceptance_fraction.mean()
+post_mean   = flat_chain.mean(axis=0)
+post_cov    = np.cov(flat_chain.T)
+```
 
 Key methods:
 - `univariate_histogram(index, ...)` — 1D marginal plot
@@ -813,7 +882,7 @@ extractor = Extractor(
     expanders=expander_list,
     mean_translation=True
 )
-extractor.run()
+optimal_fitter = extractor.fitter  # triggers full grid search on first access
 ```
 
 ---
@@ -904,26 +973,42 @@ jump_dset.add_distribution(
     model.parameters
 )
 
-# Run sampler
-sampler = Sampler('chains.hdf5', num_walkers=32, loglikelihood=loglike,
+# Run sampler (delete file first for clean run)
+import os
+chains_file = 'chains.hdf5'
+if os.path.exists(chains_file):
+    os.remove(chains_file)
+
+sampler = Sampler(chains_file, num_walkers=32, loglikelihood=loglike,
                   jumping_distribution_set=jump_dset,
                   guess_distribution_set=guess_dset,
                   steps_per_checkpoint=50)
-sampler.run(5000)
+sampler.run_checkpoints(100)   # 100 checkpoints × 50 steps = 5000 total steps
 sampler.close()
 
 # Analyze
-with NLFitter('chains.hdf5', BurnRule(desired_fraction=0.5, thin=2)) as fitter:
-    print(f"Acceptance: {fitter.acceptance_fraction:.3f}")
-    print(f"Posterior mean: {fitter.mean}")
-    fitter.triangle_plot()
+with NLFitter(chains_file, BurnRule(desired_fraction=0.5, thin=2)) as f:
+    chain_3d = f.chain                       # (nwalkers, nsteps, ndim)
+    flat_chain = chain_3d.reshape(-1, chain_3d.shape[-1])
+    print(f"Acceptance: {f.acceptance_fraction.mean():.3f}")
+    print(f"Posterior mean: {flat_chain.mean(axis=0)}")
+    f.triangle_plot()
 ```
 
 ---
 
 ## Important Notes for Code Generation
 
-1. **Import style**: Users typically do `from pylinex import *` or import specific classes. The top-level `__init__.py` exports everything.
+1. **Import style**: All key classes are available from the top-level `pylinex` namespace — no submodule imports needed:
+   ```python
+   from pylinex import (
+       TrainedBasis, BasisSum, BasisModel, Fitter, MetaFitter, Extractor,
+       TanhModel, SumModel, TrainingSetCreator,
+       AttributeQuantity, CompiledQuantity,
+       RepeatExpander, NullExpander,
+       GaussianLoglikelihood, Sampler, NLFitter, BurnRule,
+   )
+   ```
 
 2. **Array shapes**: Training sets are always (ncurves, nchannels). Data is (nchannels,). Basis vectors are (k, nchannels).
 
