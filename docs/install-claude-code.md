@@ -15,11 +15,16 @@ conda activate pylinex_env
 
 ## 2. Install the plugin
 
-Open Claude Code and run this slash command to install the plugin from GitHub:
+In your terminal, add the marketplace and install the plugin:
 
+```bash
+claude plugin marketplace add caden-kunkel/pylinex-ai-assistant
+claude plugin install pylinex@pylinex-ai-assistant
 ```
-/plugin marketplace add caden-kunkel/pylinex-ai-assistant
-```
+
+Restart Claude Code so it picks up the new plugin. (Adding the marketplace alone does **not** install the plugin — you need both commands.)
+
+Alternatively, inside an interactive session run `/plugin`, choose **Add marketplace**, enter `caden-kunkel/pylinex-ai-assistant`, then install the `pylinex` plugin from the menu.
 
 ## 3. Activate in a session
 
