@@ -84,6 +84,8 @@ Treat these as prerequisites before writing any pylinex code.
 
 - **`NLFitter.acceptance_fraction` shape is `(nwalkers, ncheckpoints)`.** Take `.mean()` for a scalar summary.
 
+- **Sampler restart:** If the HDF5 file already exists and `restart_mode=None`, Sampler raises an error. Delete the file first, or set `restart_mode='continue'` to append.
+
 ---
 
 ## Module Reference
@@ -136,6 +138,7 @@ BasisSum(names, bases)
 Container that concatenates multiple named bases. Used throughout pylinex to represent multi-component models. The combined parameter vector is the concatenation of all component parameters.
 
 Key methods:
+- `__call__(parameters)` — evaluate: returns combined model curve
 - `basis_dot_products(error=None)` — cross-correlation matrix between components
 - `basis_subsets(**subsets)` — create truncated BasisSum (e.g., `basis_sum.basis_subsets(signal=3, foreground=5)`)
 
@@ -238,10 +241,29 @@ SlicedModel(model, output_slice)      # Take subset of output channels
 Generates training sets by sampling a Model over a DistributionSet of parameter priors.
 
 ```python
-creator = TrainingSetCreator(file_name, num_curves, model, prior_distribution_set)
-creator.generate()                         # returns None — writes curves to HDF5 one at a time
-training_set = creator.get_training_set()  # reads file, returns (ncurves, nchannels) array (drops NaN rows)
-# Also: creator.get_training_set(return_parameters=True) → (training_set, parameters)
+TrainingSetCreator(model, prior_set, num_curves, file_name,
+                   seed=None, verbose=True, allow_errors=True)
+```
+- `model`: Model object to evaluate
+- `prior_set`: DistributionSet for parameter draws
+- `num_curves`: number of training curves to generate
+- `file_name`: HDF5 output file
+
+Key methods:
+- `generate()` — generates curves, saves to HDF5. **Returns None.**
+- `get_training_set(return_parameters=False, return_model=False, return_prior_set=False)` — retrieves `(ncurves, nchannels)` array (drops NaN rows)
+- `get_bad_parameters()` — returns parameters that produced NaN curves
+- `close()` — close HDF5 file
+
+Static methods:
+- `load_training_set(file_name, ...)` — load from existing file
+- `load_training_sets(file_names, ...)` — load and concatenate from multiple files
+
+```python
+creator = TrainingSetCreator(model, prior_set, num_curves, 'training.hdf5')
+creator.generate()                   # returns None — writes to HDF5
+training_set = creator.get_training_set()
+# or: training_set, params = creator.get_training_set(return_parameters=True)
 ```
 
 #### Model Utilities
@@ -304,24 +326,31 @@ Performs weighted least-squares with optional Gaussian priors. Solution is analy
 Key properties (verified from source):
 - `parameter_mean` — best-fit coefficient vector
 - `parameter_covariance` — posterior parameter covariance matrix
-- `parameter_distribution` — distpy GaussianDistribution
+- `parameter_distribution` — distpy GaussianDistribution of posterior
 - `parameter_inverse_covariance`
-- `likelihood_parameter_mean` / `likelihood_parameter_covariance` — likelihood-only (no prior) estimates
-- `channel_mean` — best-fit model curve
-- `channel_bias` — data minus best-fit model (residuals)
-- `channel_bias_RMS` — scalar RMS of residuals
+- `likelihood_parameter_mean` / `likelihood_parameter_covariance` — MLE estimates (no prior)
+- `likelihood_channel_mean` — MLE reconstruction
+- `channel_mean` — posterior reconstruction (basis @ parameter_mean)
+- `channel_bias` — data minus channel_mean (residuals)
+- `channel_bias_RMS` — scalar RMS of channel_bias
 - `channel_RMS` — per-channel RMS
-- `channel_error` — propagated parameter uncertainty to channel space
+- `channel_error` — posterior channel uncertainty
 - `chi_squared` / `reduced_chi_squared` / `degrees_of_freedom`
-- `bias_statistic` / `weighted_bias`
+- `bias_statistic` / `weighted_bias` / `psi_squared`
 - `maximum_loglikelihood`
+- `log_evidence` — log marginal likelihood
+- `log_evidence_per_data_channel`
+- `BPIC` / `AIC` / `BIC` — information criteria
 - `data_significance` — chi-squared of data term
 - `prior_significance` — chi-squared of prior term
-- `log_parameter_covariance_determinant`
 
 Subbasis methods (take `name=` string for one component):
-- `subbasis_channel_mean(name)`, `subbasis_channel_error(name)`, `subbasis_channel_bias(name)`
-- `subbasis_channel_RMS(name)`, `subbasis_parameter_mean(name)`, `subbasis_parameter_covariance(name)`
+- `subbasis_parameter_mean(name)`, `subbasis_parameter_covariance(name)`
+- `subbasis_channel_mean(name)`, `subbasis_channel_RMS(name)`, `subbasis_channel_error(name)`
+- `subbasis_channel_bias(name, true_curve=None)`, `subbasis_weighted_bias(name, true_curve=None)`
+- `subbasis_bias_statistic(name, true_curve=None)`, `subbasis_log_separation_evidence(name)`
+- `bias_score(training_sets, ...)` — bias metric over training set draws
+- `plot_subbasis_fit(nsigma, name, ...)` — plot component fit with uncertainty band
 
 When `data` is 2D (multiple curves), all properties become arrays over curves.
 
@@ -337,9 +366,14 @@ MetaFitter(basis_sum, data, error, compiled_quantity, quantity_to_minimize,
 Runs a Fitter at every point on a truncation grid. Used for model selection (finding optimal number of basis vectors per component).
 
 Key properties:
-- `grids` — computed quantity values over full grid
-- `optimal_indices` — grid indices that minimize chosen quantity
-- `shape` — grid shape
+- `grids` — dict of computed quantity values over full grid
+- `quantity_to_minimize` — name of metric being minimized
+
+Key methods:
+- `minimize_quantity(index=0, which_data=None)` — returns optimal grid indices
+- `fitter_from_indices(indices)` — Fitter at given grid point
+- `fitter_from_subsets(**subsets)` — Fitter at named truncation levels (e.g., `foreground=5, signal=3`)
+- `prior_subsets(**subsets)` — prior for given truncation
 
 #### Extractor
 ```python
@@ -358,12 +392,14 @@ End-to-end linear extraction: creates TrainedBasis for each component, builds Ba
 
 `Extractor` is **lazy** — there is no `.run()` method. Access `.fitter` to trigger the full grid search:
 
-Key properties:
-- `fitter` — triggers computation on first access, returns the optimal `Fitter` object
-- `meta_fitter` — returns the full `MetaFitter` if needed
+Key properties (all lazy — accessing triggers computation):
+- `fitter` — optimal Fitter (triggers full pipeline on first access)
+- `meta_fitter` — underlying MetaFitter grid search
+- `basis_sum` — constructed BasisSum with TrainedBasis components
+- `expander_set` — ExpanderSet organizing component expanders
 
 Key methods:
-- `save(file_name)` / `load(file_name)` — HDF5 persistence
+- `fill_hdf5_group(group)` — save to HDF5
 
 #### Other
 - `TrainingSetIterator` — memory-efficient iteration over large training sets
@@ -386,9 +422,11 @@ GaussianLoglikelihood(data, error, model)
 Computes: ln L = -0.5 * (data - model(θ))ᵀ C⁻¹ (data - model(θ))
 
 Key methods:
-- `__call__(parameters)` — evaluate log-likelihood
-- `gradient(parameters)` �� gradient w.r.t. parameters
+- `__call__(parameters, return_negative=False)` — evaluate log-likelihood
+- `gradient(parameters)` — gradient w.r.t. parameters
 - `hessian(parameters)` — Hessian matrix
+- `chi_squared(parameters)` / `reduced_chi_squared(parameters)` — goodness of fit
+- `change_data(new_data)` / `change_model(new_model)` — swap components without recreating
 
 #### Other Likelihoods
 - `PoissonLoglikelihood(data, model)` — for count data
@@ -423,7 +461,8 @@ Sampler(file_name, num_walkers, loglikelihood,
 - `use_ensemble_sampler`: if True, uses emcee's EnsembleSampler
 
 Key methods:
-- `run_checkpoints(num_checkpoints)` — run MCMC; each checkpoint = `steps_per_checkpoint` steps. So 2000 total steps with `steps_per_checkpoint=50` → `run_checkpoints(40)`. There is no `.run()` method.
+- `run_checkpoints(num_checkpoints)` — run MCMC for num_checkpoints checkpoints; each checkpoint = `steps_per_checkpoint` steps. So 2000 total steps with `steps_per_checkpoint=50` → `run_checkpoints(40)`. There is no `.run()` method.
+- `run_checkpoint()` — run a single checkpoint
 - `close()` — close HDF5 file handle
 
 **Important:** If the `file_name` HDF5 already exists and `restart_mode=None`, Sampler raises an error. Delete the file first for a clean run:
@@ -451,6 +490,8 @@ Key properties (verified shapes):
 - `acceptance_fraction` — `(nwalkers, ncheckpoints)` — take `.mean()` for scalar
 - `parameters` — list of parameter name strings
 - `maximum_probability_parameters` — MAP parameter vector
+- `maximum_likelihood_parameters` — MLE parameter vector
+- `AIC`, `BIC`, `BPIC`, `DIC`, `DIC2` — information criteria
 
 To compute posterior statistics manually:
 ```python
@@ -467,13 +508,20 @@ post_cov    = np.cov(flat_chain.T)
 ```
 
 Key methods:
-- `univariate_histogram(index, ...)` — 1D marginal plot
-- `bivariate_histogram(index1, index2, ...)` — 2D marginal
-- `triangle_plot(...)` — full corner plot
+- `triangle_plot(parameters=None, ...)` — full corner plot
+- `plot_univariate_histogram(parameter_index, ...)` — 1D marginal
+- `plot_bivariate_histogram(parameter_index1, parameter_index2, ...)` — 2D marginal
+- `plot_chain(parameters=None, ...)` — trace plots
+- `plot_lnprobability(...)` — log-probability trace
+- `plot_diagnostics(...)` — combined diagnostic plots
+- `plot_acceptance_fraction(...)` — acceptance rate plots
+- `sample(number, parameters=None)` — draw posterior samples
+- `reconstructions(number, parameters=None, model=None, ...)` — posterior reconstructions
+- `reconstruction_confidence_intervals(number, probabilities, ...)` — credible intervals
 
 #### BurnRule
 ```python
-BurnRule(min_checkpoints=None, desired_fraction=None, thin=None, burn_end=False)
+BurnRule(min_checkpoints=1, desired_fraction=0.5, thin=None, burn_end=False)
 ```
 - `desired_fraction`: fraction of chain to keep (0 to 1)
 - `thin`: thinning stride
@@ -520,7 +568,7 @@ from pylinex import CompiledQuantity, AttributeQuantity, FunctionQuantity
 
 compiled_qty = CompiledQuantity('metrics',
     AttributeQuantity('channel_RMS', 'channel_RMS'),
-    AttributeQuantity('log_evidence', 'log_posterior_likelihood'),
+    AttributeQuantity('log_evidence', 'log_evidence'),
     FunctionQuantity('bias_score', lambda fitter: compute_bias(fitter))
 )
 ```
@@ -579,7 +627,7 @@ prior = GaussianDistribution(mean_vector, covariance_matrix)  # multivariate
 
 # Distribution set (maps parameter names to distributions)
 dset = DistributionSet()
-dset.add_distribution(GaussianDistribution(0, 1), 'amplitude')
+dset.add_distribution(GaussianDistribution(0, 1), 'amplitude', transforms=None)
 dset.add_distribution(UniformDistribution(50, 200), 'center_freq')
 ```
 
@@ -603,7 +651,7 @@ from distpy import GaussianJumpingDistribution, JumpingDistributionSet
 
 # Proposal distribution for MCMC
 jds = JumpingDistributionSet()
-jds.add_distribution(GaussianJumpingDistribution(covariance_matrix), parameter_names)
+jds.add_distribution(GaussianJumpingDistribution(covariance_matrix), parameter_names, transforms=None)
 ```
 
 ### MetropolisHastingsSampler
@@ -781,7 +829,8 @@ meta_fitter = MetaFitter(basis_sum, temperatures, noise_level,
                          quantity, 'BPIC', dimension)
 
 # Get optimal fitter
-optimal_fitter = meta_fitter.fitter_from_indices(meta_fitter.optimal_indices)
+optimal_indices = meta_fitter.minimize_quantity()
+optimal_fitter = meta_fitter.fitter_from_indices(optimal_indices)
 ```
 
 ### Problem 3: Two-Component Extraction (Foreground + Signal)
@@ -939,18 +988,18 @@ basis_sum = BasisSum(['signal', 'foreground'], [signal_basis, fg_basis])
 
 fitter = Fitter(basis_sum, data, error=error)
 print(fitter.channel_RMS)          # residual RMS
-print(fitter.fit_parameters[:5])   # signal coefficients
+print(fitter.parameter_mean[:5])   # signal coefficients
 
 # Grid search over truncation levels
 extractor = Extractor(
     data, error,
     names=['signal', 'foreground'],
     training_sets=[signal_training, foreground_training],
-    dimensions=[{'signal': np.arange(1, 8), 'foreground': np.arange(1, 6)}],
+    dimensions=[{'signal': np.arange(1, 8)}, {'foreground': np.arange(1, 6)}],
     quantity_to_minimize='bias_score',
     mean_translation=True
 )
-extractor.run()
+optimal_fitter = extractor.fitter  # triggers full grid search on first access
 ```
 
 ### MCMC Sampling Pattern
