@@ -2,7 +2,7 @@
 
 Get accurate, runnable code for **global 21cm signal extraction** with any AI tool — Claude Code, GitHub Copilot, ChatGPT, Gemini, or any chat interface.
 
-The core asset is a 944-line API reference covering the full pylinex ecosystem: **pylinex**, **distpy**, **perses**, and **ares**. Each integration method below loads that reference into your AI of choice.
+The core asset is an API reference covering the full pylinex ecosystem: **pylinex**, **distpy**, **perses**, and **ares**. Each integration method below loads that reference into your AI of choice.
 
 ---
 
